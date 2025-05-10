@@ -1,11 +1,11 @@
-
 import streamlit as st
 import sqlite3
 import pandas as pd
-import openai
 import plotly.express as px
+from openai import OpenAI  # New import
 
-openai.api_key = st.secrets["openai_api_key"]
+# Initialize OpenAI client using v1 format
+client = OpenAI(api_key=st.secrets["openai_api_key"])
 
 # Load DB schema (to guide LLM)
 def get_schema():
@@ -15,17 +15,17 @@ Tables:
 - transactions(id, merchant_id, amount, date)
 """
 
-# Convert prompt to SQL
+# Convert prompt to SQL using OpenAI v1
 def prompt_to_sql(prompt):
     schema = get_schema()
-    response = openai.ChatCompletion.create(
+    response = client.chat.completions.create(
         model="gpt-4",
         messages=[
             {"role": "system", "content": f"You convert natural language to SQL. Use this schema: {schema}"},
             {"role": "user", "content": prompt}
         ]
     )
-    return response['choices'][0]['message']['content']
+    return response.choices[0].message.content
 
 # Run SQL and get result
 def run_query(sql):
