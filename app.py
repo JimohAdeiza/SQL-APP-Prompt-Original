@@ -2,10 +2,10 @@ import streamlit as st
 import sqlite3
 import pandas as pd
 import plotly.express as px
-from openai import OpenAI  # New import
+import openai  # Correct import for SDK >= 1.0.0
 
-# Initialize OpenAI client using v1 format
-client = OpenAI(api_key=st.secrets["openai_api_key"])
+# Set OpenAI API key securely from Streamlit secrets
+openai.api_key = st.secrets["openai_api_key"]
 
 # Load DB schema (to guide LLM)
 def get_schema():
@@ -15,17 +15,24 @@ Tables:
 - transactions(id, merchant_id, amount, date)
 """
 
-# Convert prompt to SQL using OpenAI v1
+# Convert prompt to SQL using OpenAI
 def prompt_to_sql(prompt):
     schema = get_schema()
-    response = client.chat.completions.create(
-        model="gpt-4",
-        messages=[
-            {"role": "system", "content": f"You convert natural language to SQL. Use this schema: {schema}"},
-            {"role": "user", "content": prompt}
-        ]
-    )
-    return response.choices[0].message.content
+    try:
+        response = openai.chat.completions.create(
+            model="gpt-4",
+            messages=[
+                {"role": "system", "content": f"You convert natural language to SQL. Use this schema: {schema}"},
+                {"role": "user", "content": prompt}
+            ]
+        )
+        return response.choices[0].message.content
+    except openai.AuthenticationError as e:
+        st.error("Authentication failed. Please check your OpenAI API key.")
+        return None
+    except Exception as e:
+        st.error(f"An unexpected error occurred: {e}")
+        return None
 
 # Run SQL and get result
 def run_query(sql):
@@ -43,12 +50,13 @@ prompt = st.text_area("Enter your prompt", "List all merchants and their locatio
 if st.button("Generate Report"):
     with st.spinner("Generating SQL..."):
         sql = prompt_to_sql(prompt)
-        st.code(sql, language='sql')
-        df, error = run_query(sql)
-        if error:
-            st.error(f"SQL Error: {error}")
-        else:
-            st.dataframe(df)
-            if 'amount' in df.columns:
-                fig = px.bar(df, x=df.columns[0], y='amount')
-                st.plotly_chart(fig)
+        if sql:
+            st.code(sql, language='sql')
+            df, error = run_query(sql)
+            if error:
+                st.error(f"SQL Error: {error}")
+            else:
+                st.dataframe(df)
+                if 'amount' in df.columns:
+                    fig = px.bar(df, x=df.columns[0], y='amount')
+                    st.plotly_chart(fig)
