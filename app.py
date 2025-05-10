@@ -5,7 +5,8 @@ import plotly.express as px
 import openai  # Correct import for SDK >= 1.0.0
 
 # Set OpenAI API key securely from Streamlit secrets
-openai.api_key = st.secrets[]
+openai.api_key = st.secrets["openai_api_key"]
+
 
 # Load DB schema (to guide LLM)
 def get_schema():
