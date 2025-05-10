@@ -5,7 +5,7 @@ import plotly.express as px
 import openai  # Correct import for SDK >= 1.0.0
 
 # Set OpenAI API key securely from Streamlit secrets
-openai.api_key = st.secrets["openai_api_key"]
+openai.api_key = st.secrets[]
 
 # Load DB schema (to guide LLM)
 def get_schema():
@@ -20,7 +20,7 @@ def prompt_to_sql(prompt):
     schema = get_schema()
     try:
         response = openai.chat.completions.create(
-            model="gpt-4",
+            model="gpt-3.5-turbo",
             messages=[
                 {"role": "system", "content": f"You convert natural language to SQL. Use this schema: {schema}"},
                 {"role": "user", "content": prompt}
